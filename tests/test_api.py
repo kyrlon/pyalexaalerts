@@ -1,4 +1,3 @@
-"""Checks that AlexaAPI sends the same URLs/headers the Alexa app does (HTTP mocked)."""
 import base64
 import datetime
 import json

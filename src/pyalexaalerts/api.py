@@ -1,13 +1,3 @@
-"""Low-level HTTP client for the Alexa endpoints the Android Alexa app uses.
-
-Two backends, both authenticated from the one refresh token in service_auth.json:
-
-* Alarms — `api.amazonalexa.com/v1/alerts/alarms`, `Authorization: Atna|...` access token.
-* Reminders, timers, devices, sounds, text commands — `na-api-alexa.amazon.com/api/...`,
-  session cookies plus a `csrf` header.
-
-Every method returns raw dicts; see manager.AlexaAlerts for the friendly layer.
-"""
 import base64
 import json
 import logging
@@ -57,7 +47,6 @@ TEXT_COMMAND_SKILL = "amzn1.ask.1p.tellalexa"
 
 
 class _AmazonSession(requests.Session):
-    """requests.Session that adds a fresh x-amzn-RequestId and a default timeout to every request."""
 
     def request(self, method, url, **kwargs) -> requests.Response:
         kwargs.setdefault("headers", {})["x-amzn-RequestId"] = str(uuid.uuid4())
@@ -122,8 +111,6 @@ class AlexaAPI:
         self._csrf: str | None = None
         self._person_id = person_id
 
-    # ------------------------------------------------------------------ web backend (cookies + csrf)
-
     def _cookie(self, name: str) -> "str | None":
         return next((c.value for c in self._session.cookies if c.name == name), None)
 
@@ -174,8 +161,6 @@ class AlexaAPI:
             raise AlexaAPIError(method, path, response.status_code, response.text)
         return response
 
-    # ------------------------------------------------------------------ alarms backend (Atna token)
-
     def _alerts(self, method: str, path: str = "", *, _retried: bool = False, **kwargs) -> requests.Response:
         headers = {
             "authorization": self._auth.access_token(force=_retried),
@@ -193,8 +178,6 @@ class AlexaAPI:
         if not response.ok:
             raise AlexaAPIError(method, url, response.status_code, response.text)
         return response
-
-    # ------------------------------------------------------------------ identity
 
     @property
     def personId(self) -> str:
@@ -231,8 +214,6 @@ class AlexaAPI:
             logger.debug("reminder list without personId failed: %s", e)
         return None
 
-    # ------------------------------------------------------------------ devices & sounds
-
     def getDevices(self) -> list[dict]:
         data = _json(self._web("GET", "/api/devices-v2/device?cached=false")) or {}
         return data.get("devices", [])
@@ -246,8 +227,6 @@ class AlexaAPI:
         q = urllib.parse.urlencode({"deviceType": device_type, "deviceSerialNumber": serial})
         return _json(self._web(
             "GET", f"/api/notification/default-sound?{q}&notificationType={notification_type}"))
-
-    # ------------------------------------------------------------------ alarms
 
     def getAlarms(self) -> list[dict]:
         alarms, url, seen = [], "?maxResults=200", set()
@@ -277,8 +256,6 @@ class AlexaAPI:
     def deleteAlarm(self, token: str) -> None:
         self._alerts("DELETE", f"/{token}")
 
-    # ------------------------------------------------------------------ reminders & timers (legacy notifications API)
-
     def getNotifications(self, notification_type: str) -> list[dict]:
         """REMINDER or TIMER notifications. Reminder results also contain to-do Tasks; callers filter them."""
         q = {"personId": self.personId, "notificationType": notification_type}
@@ -298,17 +275,15 @@ class AlexaAPI:
         self._web("DELETE", f"/api/notifications/{urllib.parse.quote(notification_id)}?{q}")
 
     def updateTimer(self, body: dict) -> "dict | None":
-        """Pause/resume: PUT the whole timer with a new status (no query string, as the app does)."""
+        """Pause/resume: PUT the whole timer with a new status (no query string)."""
         return _json(self._web("PUT", f"/api/notifications/{urllib.parse.quote(body['id'])}", json=body))
 
     def deleteTimer(self, notification_id: str) -> None:
         q = urllib.parse.urlencode({"personId": self.personId})
         self._web("DELETE", f"/api/notifications/{urllib.parse.quote(notification_id)}?{q}")
 
-    # ------------------------------------------------------------------ text commands
-
     def _runNode(self, node: dict) -> None:
-        """Run a one-step routine right away (the app's routine "preview")."""
+        """Run a one-step routine right away."""
         sequence = {
             "@type": "com.amazon.alexa.behaviors.model.Sequence",
             "startNode": {"@type": "com.amazon.alexa.behaviors.model.OpaquePayloadOperationNode", **node},

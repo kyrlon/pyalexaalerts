@@ -1,4 +1,3 @@
-"""Exchange alexa.refresh_token (config/service_auth.json) for session cookies (config/runtime_credentials.json)."""
 import argparse
 import json
 from pathlib import Path

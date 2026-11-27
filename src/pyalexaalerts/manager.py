@@ -91,8 +91,6 @@ class AlexaAlerts:
         self._items: dict[Kind, dict[str, Item]] = {k: {} for k in Kind}
         self._sounds: dict[tuple[str, str], list[Sound]] = {}
 
-    # ------------------------------------------------------------------ sync
-
     def resync(self, kinds: "set[Kind] | None" = None) -> None:
         """Fetch devices, then alarms/reminders/timers (or just `kinds`), replacing local state."""
         self._devices = {d["serialNumber"]: Device(d) for d in self.api.getDevices() if d.get("serialNumber")}
@@ -118,8 +116,6 @@ class AlexaAlerts:
         item.device = self._devices.get(item.serial)
         self._items[item.kind][item.id] = item
         return item
-
-    # ------------------------------------------------------------------ devices & sounds
 
     def devices(self, alarms: "bool | None" = None, reminders: "bool | None" = None) -> list[Device]:
         return [
@@ -158,10 +154,7 @@ class AlexaAlerts:
         return Sound(raw) if raw.get("id") else None
 
     def getSound(self, device: "str | Device", ref: "str | Sound | None" = None) -> Sound:
-        """A built-in sound by id or name (exact, else unique substring); the device default when `ref` is None.
-
-        Skill sounds are rejected: choosing them was never observed in the app and some are paid.
-        """
+        """A built-in sound by id or name (exact, else unique substring); the device default when `ref` is None."""
         if isinstance(ref, Sound):
             return ref
         dev = self.getDevice(device)
@@ -181,8 +174,6 @@ class AlexaAlerts:
         if matches[0].isSkill:
             raise ValueError(f"'{matches[0].name}' is a skill sound; only built-in sounds are supported")
         return matches[0]
-
-    # ------------------------------------------------------------------ lookup
 
     def all(self) -> list[Item]:
         return [i for items in self._items.values() for i in items.values()]
@@ -223,8 +214,6 @@ class AlexaAlerts:
                 raise ValueError(f"'{ref}' is an Alexa to-do item; those can only be listed here")
             raise NotificationNotFoundException(f"No {what} matches '{ref}'")
         raise NotificationNotFoundException(f"'{ref}' is ambiguous ({len(matches)} matches); use a longer id")
-
-    # ------------------------------------------------------------------ alarms
 
     def createAlarm(
         self,
@@ -296,8 +285,6 @@ class AlexaAlerts:
         raw = self.api.updateAlarm(alarm.id, alarm_update_body(when_dt, rec, assets))
         return self._replace(alarm, Alarm(raw) if raw and "alarmToken" in raw else alarm)
 
-    # ------------------------------------------------------------------ reminders
-
     def createReminder(self, device: "str | Device", when, text: str, recurrence: "str | Recurrence | None" = None,
                        note: "str | None" = None, important: bool = False, keep_reminding: bool = False) -> Reminder:
         """Create a reminder that Alexa will announce with `text`.
@@ -348,7 +335,7 @@ class AlexaAlerts:
             raise ValueError(f"this reminder repeats {rec.describe()}; edit it in the Alexa app, or pass a new "
                              "repeat (daily, weekdays, mon,wed, monthly:15, ...) to replace it")
         # Sending a repeating reminder back as the server stores it (alarmTime/originalDate set, frequency null,
-        # recurrenceRules...) silently turns it into a one-off - seen live. So always rebuild its schedule the
+        # recurrenceRules...) silently turns it into a one-off. So always rebuild its schedule the
         # way creation does, even for a text-only edit.
         if when is not None or recurrence is not _UNSET or rec is not None:
             base = when if when is not None else (rem.time.time() if rem.time else None)
@@ -367,9 +354,6 @@ class AlexaAlerts:
         `when`: a time (same day, new time), a date (new day, same time), a datetime, or a timedelta from now.
         Alexa splits the occurrence off as a separate one-off reminder (new id), which is returned. The series'
         next occurrence then moves on, so calling this again changes the one after.
-
-        Shape captured from the app: PUT the series id with status INSTANCE_UPDATED, the series' alarmTime
-        (which identifies the occurrence), the new originalDate/originalTime, and no rRuleData.
         """
         rem = self.get(ref, Kind.REMINDER) if not isinstance(ref, Item) else ref
         if not isinstance(rem, Reminder):
@@ -411,8 +395,6 @@ class AlexaAlerts:
         self.refresh({Kind.REMINDER})
         new_id = result.get("id")
         return self._items[Kind.REMINDER].get(new_id) or Reminder(result if new_id else body, rem.device)
-
-    # ------------------------------------------------------------------ timers
 
     def createTimer(self, device: "str | Device", duration: datetime.timedelta, label: "str | None" = None,
                     wait: float = 15.0, poll: float = 1.5) -> "Timer | None":
@@ -483,8 +465,6 @@ class AlexaAlerts:
         self.refresh({Kind.TIMER})
         return self._items[Kind.TIMER].get(timer.id) or result
 
-    # ------------------------------------------------------------------ ringing alerts
-
     def _commandable(self, device: "str | Device") -> Device:
         dev = self.getDevice(device)
         if not dev.customerId:
@@ -508,8 +488,6 @@ class AlexaAlerts:
         if not 1 <= minutes <= 60:
             raise ValueError("snooze for 1 to 60 minutes")
         self.sendCommand(device, f"snooze for {minutes} minute{'s' if minutes != 1 else ''}")
-
-    # ------------------------------------------------------------------ generic
 
     def update(self, ref, **kwargs) -> Item:
         item = _not_task(self.get(ref))

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]  # license = "MIT" + license-files (PEP 639)
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "pyalexaalerts"
 dynamic = ["version"]
 description = "An unofficial Python library for programmatically managing Amazon Alexa alarms, timers, and reminders."
 readme = "README.md"
+authors = [{ name = "Kyron Longwood" }]
+keywords = ["alexa", "amazon", "echo", "alarm", "reminder", "timer", "cli"]
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
@@ -15,7 +17,9 @@ dependencies = [
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
+    "Environment :: Console",
     "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -25,6 +29,11 @@ classifiers = [
     "Topic :: Home Automation",
     "Topic :: Internet :: WWW/HTTP",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kyrlon/pyalexaalerts"
+Repository = "https://github.com/kyrlon/pyalexaalerts"
+Issues = "https://github.com/kyrlon/pyalexaalerts/issues"
 
 [project.optional-dependencies]
 test = ["pytest"]

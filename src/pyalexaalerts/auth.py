@@ -1,8 +1,3 @@
-"""Cookie-based Alexa authentication, shared with pyalexalist's config layout.
-
-`config/service_auth.json` holds the long-lived refresh token (from alexa-cookie-cli).
-`config/runtime_credentials.json` caches the session cookies exchanged from it.
-"""
 import datetime
 import json
 import logging
@@ -141,8 +136,6 @@ class AlexaAuth:
         for name, cookie in cookies.items():
             self._session.cookies.set(name, cookie["Value"], domain=f".{self._amazon_domain}", path="/")
 
-    # ------------------------------------------------------------------ config / cache helpers
-
     def _service_auth(self) -> dict:
         try:
             with open(self._service_auth_path, "r") as f:
@@ -180,8 +173,6 @@ class AlexaAuth:
     def cache_value(self, key: str, value: str) -> None:
         self._save_runtime(key, value)
 
-    # ------------------------------------------------------------------ cookies
-
     def refresh(self) -> bool:
         """Exchange the refresh token for new cookies, cache them, and apply them.
 
@@ -199,8 +190,6 @@ class AlexaAuth:
         self._save_runtime("cookies", cookies)  # cookies stay usable in-memory even if this fails
         self._apply(cookies)
         return True
-
-    # ------------------------------------------------------------------ access token (alarms API)
 
     def access_token(self, force: bool = False) -> str:
         """A valid `Atna|...` access token, minted from the refresh token and cached for its lifetime."""

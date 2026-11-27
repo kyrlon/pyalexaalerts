@@ -457,7 +457,7 @@ def test_cli_list(fake_cli, capsys):
 
 
 def test_snoozed_reminder_counts_as_active(alexa):
-    alexa.api.notifs["REMINDER"][0]["status"] = "SNOOZED"     # seen live while a snoozed reminder waits
+    alexa.api.notifs["REMINDER"][0]["status"] = "SNOOZED"     
     alexa.refresh({Kind.REMINDER})
     rem = alexa.get("bbbb")
     assert rem.enabled and rem.status == "SNOOZED"
@@ -519,7 +519,7 @@ def test_cli_stop_snooze(fake_cli, capsys):
     assert cli.main(["stop-alert", "-d", "kitchen"]) == 0
     assert cli.main(["snooze", "-d", "kitchen", "--for", "10m"]) == 0
     assert [c[-1] for c in fake_cli.calls if c[0] == "text"][-2:] == ["stop", "snooze for 10 minutes"]
-    with pytest.raises(SystemExit):                                        # --direct removed: didn't work live
+    with pytest.raises(SystemExit):                                        
         cli.main(["stop-alert", "-d", "kitchen", "--direct"])
 
 

@@ -13,18 +13,41 @@ It's a sister project of [pyalexalist](https://github.com/kyrlon/pyalexalist) an
 
 ## Install
 
-Python 3.10 or newer. From a checkout:
+Python 3.10 or newer. From PyPI:
 
 ```
-pip install -e .
+pip install pyalexaalerts
 ```
+
+or, to install into a specific Python (e.g. when `pip` points at a different one):
+
+```
+python -m pip install pyalexaalerts
+```
+
+From a clone of the repository:
+
+```
+git clone https://github.com/kyrlon/pyalexaalerts.git
+cd pyalexaalerts
+pip install .
+```
+
+For development, install it editable with the test dependencies instead: `pip install -e .[test]`.
 
 ## Obtaining Alexa credentials
 
-This is the same flow as pyalexalist. If you already have a `config/service_auth.json` from pyalexalist, copy it here or point `--config` at it.
+This is the same flow as pyalexalist. If you already have a `config/service_auth.json` from pyalexalist, copy it here or point `--config` at it. The app looks for `config/service_auth.json` in the folder you run it from.
 
-1. Copy `config/service_auth.json.example` to `config/service_auth.json`.
-2. Download the cookie CLI: `python -m pyalexaalerts.setup_alexa_cli` (supports `--list`, `--version X`, `--force`).
+1. Create `config/service_auth.json`:
+   ```json
+   {
+       "alexa": {
+           "refresh_token": ""
+       }
+   }
+   ```
+2. Download the cookie CLI: `pyalexaalerts-setup-cli` (supports `--list`, `--version X`, `--force`).
 3. Sign in and copy the refresh token into `alexa.refresh_token`:
    ```
    .\alexa-cookie-cli\alexa-cookie-cli-win.exe -p amazon.com -b amazon.com -a en_US -L en-US   # Windows

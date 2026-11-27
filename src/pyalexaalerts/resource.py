@@ -1,7 +1,4 @@
-"""Models for devices, alarms, reminders, timers and sounds, plus request-body builders.
-
-Body shapes mirror what the Android Alexa app sends (captured with HTTP Toolkit).
-"""
+"""Models for devices, alarms, reminders, timers and sounds, plus request-body builders."""
 import copy
 import datetime
 import re
@@ -39,15 +36,13 @@ class Kind(str, Enum):
             raise ValueError(f"Unknown type '{value}' (alarm, reminder, timer or task)") from None
 
 
-# ---------------------------------------------------------------------- recurrence
-
 @dataclass(frozen=True)
 class Recurrence:
     """A repeat rule: DAILY, WEEKLY on specific days (MO..SU), or MONTHLY on days of the month.
 
     MONTHLY days hold one day-of-month number as a string ("15"); empty means "the day of the first
     occurrence" and is filled in when the reminder is built. MONTHLY is for reminders only, and only one
-    day: Amazon silently keeps just the first of several days (seen live, with and without per-day entries).
+    day: Amazon silently keeps just the first of several days
     """
 
     freq: str
@@ -141,14 +136,14 @@ class Recurrence:
             return cls("DAILY")
         return cls.parse(",".join(data.get("byDay") or [])) if data.get("byDay") else cls(data["freq"])
 
-    # notifications API: rRuleData. Daily is sent as weekly-on-every-day (the only shape seen from the app).
+    # notifications API: rRuleData. Daily is sent as weekly-on-every-day.
     def to_rrule(self, t: datetime.time, start: datetime.date) -> dict:
         if not self.editable:
             raise ValueError(f"{self.describe()} repeats can't be set from here; change them in the Alexa app")
         if self.freq == "MONTHLY":
             if len(self.days) != 1:
                 raise ValueError("a monthly repeat needs exactly one day of the month")
-            # Mirrors how Amazon stores monthly reminders (EVERY_X_MONTHS + byMonthDays); confirmed live.
+            # Mirrors how Amazon stores monthly reminders (EVERY_X_MONTHS + byMonthDays)
             return {
                 "notificationTimes": [_hms(t)],
                 "nextTriggerTimes": [],
@@ -216,8 +211,6 @@ def _parse_time(s: "str | None") -> "datetime.time | None":
         return None
 
 
-# ---------------------------------------------------------------------- device / sound
-
 class Device:
     def __init__(self, raw: dict) -> None:
         self.raw = raw
@@ -271,8 +264,6 @@ class Sound:
     def __repr__(self) -> str:
         return f"Sound({self.name!r}, {self.id})"
 
-
-# ---------------------------------------------------------------------- items
 
 class Item:
     """Common bits of alarms, reminders and timers."""
@@ -508,8 +499,6 @@ def _clock(seconds: int) -> str:
     return f"{seconds // 3600}:{seconds % 3600 // 60:02d}:{seconds % 60:02d}"
 
 
-# ---------------------------------------------------------------------- bodies
-
 _TIMER_RESPONSE_ONLY = ("deviceName", "mrmGroupContext", "rRuleData")
 
 
@@ -534,11 +523,7 @@ def timer_resume_body(timer: "Timer") -> dict:
 
 
 def timer_adjust_body(timer: "Timer", delta: datetime.timedelta, now_ms: "int | None" = None) -> dict:
-    """A paused timer with `delta` added to its time left (negative subtracts).
-
-    Amazon takes the time left from the pause request as given, so pausing with a different remainingTime and
-    then resuming changes a timer's length (checked live). A timer that's already paused just gets the new time.
-    """
+    """A paused timer with `delta` added to its time left (negative subtracts)."""
     if timer.paused:
         body = _timer_put_body(timer, remainingTime=timer.raw.get("remainingTime") or 0)
     else:
@@ -588,11 +573,7 @@ def reminder_body(
     important: bool = False,
     keep_reminding: bool = False,
 ) -> dict:
-    """A new reminder, shaped like the app's PUT /api/notifications/null body.
-
-    note / important / keep_reminding fill fields the app always sends (taskMetadata.note, taskMetadata.flagged,
-    followUpMetadata.requiresFollowUp); Amazon stores and returns them (checked live).
-    """
+    """A new reminder, shaped like the app's PUT /api/notifications/null body."""
     if recurrence:
         recurrence = recurrence.with_day_of(when)
         rrule, date, time, alarm_ms = recurrence.to_rrule(when.time(), today or datetime.date.today()), None, None, 0

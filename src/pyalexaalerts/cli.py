@@ -98,8 +98,6 @@ def _resolve_when(args):
     return args.time
 
 
-# ---------------------------------------------------------------------- output
-
 def _table(rows: list[list[str]], headers: list[str]) -> str:
     widths = [max(len(str(x)) for x in col) for col in zip(headers, *rows)]
     fmt = "  ".join(f"{{:<{w}}}" for w in widths)
@@ -126,8 +124,6 @@ def _unquote(s: str) -> str:
     """'"Take medicine"' -> 'Take medicine'; leaves '"Pasta" 1:00:00 total' alone."""
     return s[1:-1] if len(s) >= 2 and s[0] == s[-1] == '"' and s.count('"') == 2 else s
 
-
-# ---------------------------------------------------------------------- commands
 
 def cmd_devices(alexa: AlexaAlerts, args) -> None:
     devs = alexa.devices() if args.all else [d for d in alexa.devices() if d.supportsAlarms or d.supportsReminders]
@@ -291,8 +287,6 @@ def cmd_delete(alexa: AlexaAlerts, args) -> None:
         alexa.delete(i)
         print(f"Deleted {i}")
 
-
-# ---------------------------------------------------------------------- parser
 
 class _RepeatAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
