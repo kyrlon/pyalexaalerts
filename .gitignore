@@ -1,0 +1,13 @@
+**venv**
+.venv/
+**.egg-info
+*.pyc
+**__pycache__**
+.pytest_cache/
+dist/
+build/
+
+# secrets
+config/service_auth.json
+config/runtime_credentials.json
+alexa-cookie-cli/
